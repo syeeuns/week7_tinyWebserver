@@ -16,6 +16,7 @@ void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, 
 		 char *shortmsg, char *longmsg);
+void echo(int connfd);
 
 int main(int argc, char **argv) 
 {
@@ -37,7 +38,8 @@ int main(int argc, char **argv)
         Getnameinfo((SA *) &clientaddr, clientlen, hostname, MAXLINE, 
                     port, MAXLINE, 0);
         printf("Accepted connection from (%s, %s)\n", hostname, port);
-	doit(connfd);                                             //line:netp:tiny:doit
+	doit(connfd);        //line:netp:tiny:doit
+    // echo(connfd);         // problem 11.6 a  echo : 근데 뭐가 다른지 확인해봐야함  
 	Close(connfd);                                            //line:netp:tiny:close
     }
 }
@@ -65,7 +67,8 @@ void doit(int fd)
         clienterror(fd, method, "501", "Not Implemented",
                     "Tiny does not implement this method");
         return;
-    }                                                    //line:netp:doit:endrequesterr
+    } 
+    // Rio_writen(fd, buf, strlen(buf));
     read_requesthdrs(&rio);                              //line:netp:doit:readrequesthdrs
 
     /* Parse URI from GET request */
@@ -108,6 +111,8 @@ void read_requesthdrs(rio_t *rp)
     while(strcmp(buf, "\r\n")) {          //line:netp:readhdrs:checkterm
 	Rio_readlineb(rp, buf, MAXLINE);
 	printf("%s", buf);
+    // Rio_writen(rp->rio_fd, buf, strlen(buf));
+
     }
     return;
 }
@@ -167,10 +172,11 @@ void serve_static(int fd, char *filename, int filesize)
 
     /* Send response body to client */
     srcfd = Open(filename, O_RDONLY, 0); //line:netp:servestatic:open
-    srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); //line:netp:servestatic:mmap
+    srcp = (char *)malloc(filesize); //line:netp:servestatic:mmap
+    Rio_readn(srcfd, srcp, filesize);
     Close(srcfd);                       //line:netp:servestatic:close
-    Rio_writen(fd, srcp, filesize);     //line:netp:servestatic:write
-    Munmap(srcp, filesize);             //line:netp:servestatic:munmap
+    Rio_writen(fd, srcp, filesize);  
+    free(srcp);           //line:netp:servestatic:munmap
 }
 
 /*
@@ -186,6 +192,8 @@ void get_filetype(char *filename, char *filetype)
 	strcpy(filetype, "image/png");
     else if (strstr(filename, ".jpg"))
 	strcpy(filetype, "image/jpeg");
+    else if (strstr(filename, ".mp4")) // problem 11.7 mpg형식 지원
+	strcpy(filetype, "video/mp4");
     else
 	strcpy(filetype, "text/plain");
 }  
@@ -243,3 +251,22 @@ void clienterror(int fd, char *cause, char *errnum,
     Rio_writen(fd, buf, strlen(buf));
 }
 /* $end clienterror */
+
+/*
+ * echo - read and echo text lines until client closes connection
+ */
+/* $begin echo */
+void echo(int connfd) 
+{
+    size_t n; 
+    char buf[MAXLINE]; 
+    rio_t rio;
+
+    Rio_readinitb(&rio, connfd);
+    while((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) { //line:netp:echo:eof
+	printf("server received %d bytes\n", (int)n);
+	Rio_writen(connfd, buf, n);
+    }
+}
+/* $end echo */
+

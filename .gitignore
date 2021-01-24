@@ -63,5 +63,5 @@ dkms.conf
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
-
+*.mp4
 # End of https://www.toptal.com/developers/gitignore/api/vscode,c

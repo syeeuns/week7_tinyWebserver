@@ -5,7 +5,7 @@
 #include "csapp.h"
 
 int main(void) {
-    char *buf, *p;
+    char *buf, *p, *method;
     char arg1[MAXLINE], arg2[MAXLINE], content[MAXLINE];
     int n1=0, n2=0;
 
@@ -24,11 +24,17 @@ int main(void) {
 	    content, n1, n2, n1 + n2);
     sprintf(content, "%sThanks for visiting!\r\n", content);
 
+    method = getenv("REQUEST_METHOD");
+
     /* Generate the HTTP response */
     printf("Connection: close\r\n");
     printf("Content-length: %d\r\n", (int)strlen(content));
     printf("Content-type: text/html\r\n\r\n");
-    printf("%s", content);
+    // printf("%s", content);
+    if (!(strcasecmp(method, "HEAD") == 0)){
+        printf("%s", content);
+    }
+
     fflush(stdout);
 
     exit(0);

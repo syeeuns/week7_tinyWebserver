@@ -68,7 +68,6 @@ void doit(int fd)
                     "Tiny does not implement this method");
         return;
     } 
-    // Rio_writen(fd, buf, strlen(buf));
     read_requesthdrs(&rio);                              //line:netp:doit:readrequesthdrs
 
     /* Parse URI from GET request */
@@ -111,7 +110,6 @@ void read_requesthdrs(rio_t *rp)
     while(strcmp(buf, "\r\n")) {          //line:netp:readhdrs:checkterm
 	Rio_readlineb(rp, buf, MAXLINE);
 	printf("%s", buf);
-    // Rio_writen(rp->rio_fd, buf, strlen(buf));
 
     }
     return;
@@ -136,7 +134,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
 	return 1;
     }
     else {  /* Dynamic content */                        //line:netp:parseuri:isdynamic
-	ptr = index(uri, '?');                           //line:netp:parseuri:beginextract
+	ptr = strchr(uri, '?');                           //line:netp:parseuri:beginextract
 	if (ptr) {
 	    strcpy(cgiargs, ptr+1);
 	    *ptr = '\0';
